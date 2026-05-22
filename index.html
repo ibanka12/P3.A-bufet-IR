@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<title>Objednávka školního bufetu</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f7fb;
+    margin: 0;
+    padding: 0;
+}
+h1 {
+    text-align: center;
+    background: #2a72d4;
+    color: white;
+    padding: 20px 0;
+    margin: 0;
+}
+.container {
+    width: 90%;
+    max-width: 500px;
+    margin: 30px auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 25px;
+}
+.item {
+    display: flex;
+    justify-content: space-between;
+    margin: 12px 0;
+    font-size: 18px;
+}
+input[type="number"] {
+    width: 70px;
+}
+#celkem {
+    text-align: center;
+    font-size: 22px;
+    margin-top: 25px;
+    font-weight: bold;
+}
+button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 25px;
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    background: #ff6b35;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+}
+</style>
+
+</head>
+<body>
+
+<h1>SŠ KOSTKA - OBJEDNÁVKY BUFET</h1>
+
+<div class="container" id="app">
+<!-- obsah se načte z CSV -->
+</div>
+
+<script>
+
+// objekt pro ceny (naplní se z CSV)
+let prices = {};
+
+// NAČTENÍ CSV po startu stránky
+window.onload = function() {
+    nacistCSV();
+};
+
+function nacistCSV() {
+
+    // ✅ cache-busting -> vždy načte nový CSV (důležité pro F5)
+    fetch("data_bufet.csv?t=" + new Date().getTime())
+        .then(response => response.text())
+        .then(data => {
+
+            const container = document.getElementById("app");
+            container.innerHTML = ""; // vymaže starý obsah
+
+            const rows = data.trim().split("\n");
+
+            // přeskočíme hlavičku (zbozi;cena)
+            for (let i = 1; i < rows.length; i++) {
+
+                let row = rows[i].trim();
+                if (!row) continue;
+
+                // ✅ CSV používá středník
+                let [zbozi, cena] = row.split(";");
+
+                let id = "item" + i;
+
+                prices[id] = Number(cena);
+
+                // vytvoření položky
+                let div = document.createElement("div");
+                div.className = "item";
+
+                div.innerHTML = `
+                    <span>${zbozi} (${cena} Kč)</span>
+                    <input type="number" id="${id}" min="0" value="0">
+                `;
+
+                container.appendChild(div);
+            }
+
+            // CELKOVÁ CENA
+            let totalDiv = document.createElement("div");
+            totalDiv.id = "celkem";
+            totalDiv.textContent = "Celková cena: 0 Kč";
+            container.appendChild(totalDiv);
+
+            // TLAČÍTKO
+            let btn = document.createElement("button");
+            btn.textContent = "ODESLAT OBJEDNÁVKU";
+            btn.onclick = odeslatObjednavku;
+            container.appendChild(btn);
+
+            // posluchače změny
+            document.querySelectorAll("input").forEach(input => {
+                input.addEventListener("input", spocitejCenu);
+            });
+        });
+}
+
+// VÝPOČET CENY
+function spocitejCenu() {
+    let total = 0;
+
+    for (let id in prices) {
+        let value = document.getElementById(id).value;
+        total += value * prices[id];
+    }
+
+    document.getElementById("celkem").textContent =
+        "Celková cena: " + total + " Kč";
+}
+
+// SIMULACE ODESLÁNÍ
+function odeslatObjednavku() {
+    alert("Objednávka odeslána (simulace backendu)");
+}
+
+</script>
+
+</body>
+</html>
